@@ -7,6 +7,7 @@ use App\Infrastructure\UI\Http\Rest\Resource\Product;
 use App\Product\Application\Command\CreateProductCommand;
 use App\Product\Application\Command\CreateProductCommandHandler;
 use App\Product\Domain\InvalidEanException;
+use JetBrains\PhpStorm\ArrayShape;
 
 final class ProductDataPersister implements ContextAwareDataPersisterInterface
 {
@@ -26,9 +27,22 @@ final class ProductDataPersister implements ContextAwareDataPersisterInterface
      * @param Product $data
      * @throws InvalidEanException
      */
-    public function persist($data, array $context = []): void
-    {
-        $this->createProductCommandHandler->handle(new CreateProductCommand($data->getId()));
+    public function persist(
+        $data,
+        #[ArrayShape([
+            'resource_class' => 'string',
+            'has_composite_identifier' => 'bool',
+            'identifiers' => 'array',
+            'collection_operation_name' => 'string',
+            'receive' => 'boolean',
+            'respond' => 'boolean',
+            'persists' => 'boolean',
+        ])]
+        array $context = []
+    ): void {
+        if ($context['collection_operation_name'] === 'post') {
+            $this->createProductCommandHandler->handle(new CreateProductCommand($data->getId()));
+        }
     }
 
     public function remove($data, array $context = [])
