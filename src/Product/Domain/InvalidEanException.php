@@ -3,8 +3,9 @@
 namespace App\Product\Domain;
 
 use JetBrains\PhpStorm\Pure;
+use Exception;
 
-class InvalidEanException extends \Exception
+final class InvalidEanException extends Exception
 {
     #[Pure]
     public function __construct(string $value)

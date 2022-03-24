@@ -2,7 +2,7 @@
 
 namespace App\Product\Domain;
 
-class Ean
+final class Ean
 {
     private string $value;
 
@@ -26,7 +26,7 @@ class Ean
         $this->value = $value;
     }
 
-    public function value(): string
+    public function getValue(): string
     {
         return $this->value;
     }

@@ -20,7 +20,7 @@ class EanTest extends TestCase
 
         $ean = new Ean($eanValue);
 
-        $this->assertSame($eanValue, $ean->value());
+        $this->assertSame($eanValue, $ean->getValue());
     }
 
     /**
