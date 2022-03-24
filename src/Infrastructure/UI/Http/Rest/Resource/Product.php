@@ -4,7 +4,11 @@ namespace App\Infrastructure\UI\Http\Rest\Resource;
 
 use ApiPlatform\Core\Annotation\ApiResource;
 
-#[ApiResource]
+#[ApiResource(
+    collectionOperations: ['get', 'post'],
+    itemOperations: ['get'],
+)]
+
 class Product
 {
     private string $id;

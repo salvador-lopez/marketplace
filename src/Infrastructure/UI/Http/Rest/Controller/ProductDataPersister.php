@@ -8,6 +8,7 @@ use App\Product\Application\Command\CreateProductCommand;
 use App\Product\Application\Command\CreateProductCommandHandler;
 use App\Product\Domain\InvalidEanException;
 use JetBrains\PhpStorm\ArrayShape;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
 final class ProductDataPersister implements ContextAwareDataPersisterInterface
 {
@@ -47,6 +48,6 @@ final class ProductDataPersister implements ContextAwareDataPersisterInterface
 
     public function remove($data, array $context = [])
     {
-        // TODO: Implement remove() method.
+        throw new MethodNotAllowedHttpException(['get', 'post']);
     }
 }
