@@ -5,3 +5,12 @@ api_platform:
         json: ['application/merge-patch+json']
     swagger:
         versions: [3]
+    exception_to_status:
+        # The 4 following handlers are registered by default, keep those lines to prevent unexpected side effects
+        Symfony\Component\Serializer\Exception\ExceptionInterface: 400
+        ApiPlatform\Core\Exception\InvalidArgumentException: 400
+        ApiPlatform\Core\Exception\FilterValidationException: 400
+        Doctrine\ORM\OptimisticLockException: 409
+
+        App\Product\Domain\InvalidEanException: 400
+
