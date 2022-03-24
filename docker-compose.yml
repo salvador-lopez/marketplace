@@ -6,10 +6,7 @@ services:
     image: mysql:8.0
     command: --default-authentication-plugin=mysql_native_password
     environment:
-      MYSQL_ROOT_PASSWORD: secret
-      MYSQL_DATABASE: marketplace
-      MYSQL_USER: symfony
-      MYSQL_PASSWORD: symfony
+      DATABASE_URL: ${DATABASE_URL}
     ports:
       - '4306:3306'
     volumes:
@@ -19,6 +16,9 @@ services:
     container_name: php
     build:
       context: docker/php
+      args:
+        TIMEZONE: ${TIMEZONE}
+        USER_NAME: ${USER_NAME}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
