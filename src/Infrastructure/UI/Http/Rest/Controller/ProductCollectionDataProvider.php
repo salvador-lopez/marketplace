@@ -4,7 +4,7 @@ namespace App\Infrastructure\UI\Http\Rest\Controller;
 
 use ApiPlatform\Core\DataProvider\ContextAwareCollectionDataProviderInterface;
 use ApiPlatform\Core\DataProvider\RestrictedDataProviderInterface;
-use App\Infrastructure\UI\Http\Rest\Resource\Product;
+use App\Product\Application\DTO\Product;
 
 final class ProductCollectionDataProvider implements ContextAwareCollectionDataProviderInterface, RestrictedDataProviderInterface
 {

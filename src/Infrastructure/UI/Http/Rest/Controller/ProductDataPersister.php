@@ -3,9 +3,9 @@
 namespace App\Infrastructure\UI\Http\Rest\Controller;
 
 use ApiPlatform\Core\DataPersister\ContextAwareDataPersisterInterface;
-use App\Infrastructure\UI\Http\Rest\Resource\Product;
 use App\Product\Application\Command\CreateProductCommand;
 use App\Product\Application\Command\CreateProductCommandHandler;
+use App\Product\Application\DTO\Product;
 use App\Product\Domain\InvalidEanException;
 use JetBrains\PhpStorm\ArrayShape;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
@@ -42,7 +42,7 @@ final class ProductDataPersister implements ContextAwareDataPersisterInterface
         array $context = []
     ): void {
         if ($context['collection_operation_name'] === 'post') {
-            $this->createProductCommandHandler->handle(new CreateProductCommand($data->getId()));
+            $this->createProductCommandHandler->handle(new CreateProductCommand($data));
         }
     }
 

@@ -21,6 +21,6 @@ final class CreateProductCommandHandler
      */
     public function handle(CreateProductCommand $command): void
     {
-        $this->repository->save(new Product(new Ean($command->getEanValue())));
+        $this->repository->save(new Product(new Ean($command->getProduct()->id)));
     }
 }
