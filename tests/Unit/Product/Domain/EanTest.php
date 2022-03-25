@@ -1,15 +1,18 @@
 <?php
 
-namespace Product\Domain;
+namespace Unit\Product\Domain;
 
 use App\Product\Domain\Ean;
 use App\Product\Domain\InvalidEanException;
 use Faker\Factory;
 use JetBrains\PhpStorm\ArrayShape;
 use PHPUnit\Framework\TestCase;
+use Prophecy\PhpUnit\ProphecyTrait;
 
 class EanTest extends TestCase
 {
+    use ProphecyTrait;
+
     /**
      * @test
      * @throws InvalidEanException

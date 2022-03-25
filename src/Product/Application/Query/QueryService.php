@@ -6,5 +6,8 @@ use App\Product\Application\DTO\Product;
 
 interface QueryService
 {
-    public function getProductById(string $id): Product;
+    /**
+     * @return Product[]
+     */
+    public function getAll(): array;
 }
