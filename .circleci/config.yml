@@ -50,8 +50,8 @@ jobs:
       # run tests with phpunit or codecept
       - run:
           command: |
-            mkdir -p ./phpunit
-            bin/phpunit --log-junit ./phpunit/junit.xml tests
+            mkdir -p phpunit-out
+            bin/phpunit --log-junit phpunit-out/junit.xml tests
           when: always
       - store_test_results:
-          path: ./phpunit
+          path: phpunit-out
