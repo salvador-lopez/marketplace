@@ -50,16 +50,21 @@ jobs:
 
       # TODO prepare the database
   
+#      - run:
+#          name: "Run tests with coverage"
+#          command: |
+#            mkdir -p ~/phpunit
+#            phpdbg -qrr bin/phpunit --coverage-html build/coverage-report --log-junit ~/phpunit/junit.xml tests
+#          when: always
+#          environment:
+#            XDEBUG_MODE: coverage
+#      - store_artifacts:
+#          path:  build/coverage-report
       - run:
-          name: "Run tests with coverage"
-          command: |
-            mkdir -p ~/phpunit
-            phpdbg -qrr bin/phpunit --coverage-html build/coverage-report --log-junit ~/phpunit/junit.xml tests
-          when: always
-          environment:
-            XDEBUG_MODE: coverage
-      - store_artifacts:
-          path:  build/coverage-report
+            command: |
+              mkdir -p ~/phpunit
+              bin/phpunit --log-junit ~/phpunit/junit.xml tests
+            when: always
       - store_test_results:
           path: ~/phpunit
 workflows:
@@ -74,4 +79,5 @@ workflows:
             container: nginx # name of your Kubernetes container
             deployment: nginx-deployment # name of your Kubernetes deployment
             image: nginx # name of your Docker image
+            docker-context: docker/nginx
             tag: stable-alpine
