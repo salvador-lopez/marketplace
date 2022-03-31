@@ -10,7 +10,7 @@ jobs:
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     docker:
       # Specify the version you desire here
-      - image: cimg/php:8.1-node
+      - image: cimg/php:8.1-browsers
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -25,6 +25,7 @@ jobs:
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
       - checkout
+      - browser-tools/install-browser-tools
 
       - run: sudo apt update # PHP CircleCI 2.0 Configuration File# PHP CircleCI 2.0 Configuration File sudo apt install zlib1g-dev libsqlite3-dev
       #- run: sudo docker-php-ext-install zip
@@ -46,13 +47,16 @@ jobs:
 
       # TODO prepare the database
   
-
-      # run tests with phpunit or codecept
       - run:
+          name: "Run tests with coverage"
           command: |
             mkdir -p ~/phpunit
-            bin/phpunit --log-junit ~/phpunit/junit.xml tests
+            phpdbg -qrr bin/phpunit --coverage-html build/coverage-report --log-junit ~/phpunit/junit.xml tests
           when: always
+          environment:
+            XDEBUG_MODE: coverage
+      - store_artifacts:
+          path:  build/coverage-report
       - store_test_results:
           path: ~/phpunit
 workflows:
