@@ -70,6 +70,10 @@ jobs:
     docker:
       - image: google/cloud-sdk:latest
     steps:
+      - run: |
+          echo $GCLOUD_SERVICE_KEY | gcloud auth activate-service-account --key-file=-
+          gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+          gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
       - run:
           name: Deploy Main to GKE
           command: kubectl apply -f deployment/dev/nginx-deployment.yaml --namespace=dev
