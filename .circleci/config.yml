@@ -3,7 +3,7 @@
 version: 2.1
 orbs:
   browser-tools: circleci/browser-tools@1.2.3
-  gke: circleci/gcp-gke@x.y.z # Use the GCP GKE orb in your config
+  gke: circleci/gcp-gke@1.4.0 # Use the GCP GKE orb in your config
   
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
