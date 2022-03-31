@@ -56,6 +56,7 @@ jobs:
       - store_test_results:
           path: phpunit-out
 workflows:
+  version: 2
   build-workflow:
     jobs:
       - build
