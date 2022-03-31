@@ -3,12 +3,11 @@
 version: 2.1
 orbs:
   browser-tools: circleci/browser-tools@1.2.3
-  gke: circleci/gcp-gke@1.4.0 # Use the GCP GKE orb in your config
   
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  build:
+  test-job:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     docker:
@@ -67,17 +66,21 @@ jobs:
             when: always
       - store_test_results:
           path: ~/phpunit
+  deploy-dev-job:
+    docker:
+      - image: google/cloud-sdk:latest
+    steps:
+      - run:
+          name: Deploy Main to GKE
+          command: |
+          # Use `kubectl` to find the line that specifies the image to use for our container, replace with image tag of the new image.
+          # The K8s deployment intelligently upgrades the cluster by shutting down old containers and starting up-to-date ones.
+          kubectl apply -f deployment/dev/nginx-deployment.yaml --namespace=dev
 workflows:
   version: 2
-  build-and-publish-workflow:
+  test-deploy:
     jobs:
-      - build
-      - gke/publish-and-rollout-image:
-            requires:
-              - build
-            cluster: marketplace-cluster-1 # name of GKE cluster to be created
-            container: nginx # name of your Kubernetes container
-            deployment: nginx-deployment # name of your Kubernetes deployment
-            image: nginx # name of your Docker image
-            docker-context: docker/nginx
-            tag: stable-alpine
+      - test-job
+      - deploy-dev-job:
+          requires:
+            - test-job # Only deploy dev once the test job has completed
