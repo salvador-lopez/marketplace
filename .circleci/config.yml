@@ -72,10 +72,8 @@ jobs:
     steps:
       - run:
           name: Deploy Main to GKE
-          command: |
-          # Use `kubectl` to find the line that specifies the image to use for our container, replace with image tag of the new image.
-          # The K8s deployment intelligently upgrades the cluster by shutting down old containers and starting up-to-date ones.
-          kubectl apply -f deployment/dev/nginx-deployment.yaml --namespace=dev
+          command: kubectl apply -f deployment/dev/nginx-deployment.yaml --namespace=dev
+
 workflows:
   version: 2
   test-deploy:
