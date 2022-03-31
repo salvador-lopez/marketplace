@@ -73,4 +73,5 @@ workflows:
             cluster: marketplace-cluster-1 # name of GKE cluster to be created
             container: nginx # name of your Kubernetes container
             deployment: nginx-deployment # name of your Kubernetes deployment
-            image: nginx:stable-alpine # name of your Docker image
+            image: nginx # name of your Docker image
+            tag: stable-alpine
