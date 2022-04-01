@@ -76,7 +76,7 @@ jobs:
           gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
       - run:
           name: Deploy Main to GKE
-          command: kubectl apply -f deployment/dev/nginx-deployment.yaml --namespace=dev
+          command: kubectl apply -f deployment/dev/nginx-deployment.yaml
 
 workflows:
   version: 2
