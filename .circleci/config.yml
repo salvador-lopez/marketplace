@@ -7,6 +7,33 @@ orbs:
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
+  create-marketplace-vendors-job:
+    docker:
+      - image: cimg/php:8.1
+    steps:
+      - checkout
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            # "composer.lock" can be used if it is committed to the repo
+            - v1-dependencies-{{ checksum "composer.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+
+      - run: composer install -n --prefer-dist
+
+      - save_cache:
+          key: v1-dependencies-{{ checksum "composer.json" }}
+          paths:
+            - ./vendor
+      - persist_to_workspace:
+          # Must be an absolute path, or relative path from working_directory. This is a directory on the container which is
+          # taken to be the root directory of the workspace.
+          root: .
+          # Must be relative path from root
+          paths:
+            - vendor
+
 #  test-job:
 #    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
 #    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
@@ -66,6 +93,35 @@ jobs:
 #            when: always
 #      - store_test_results:
 #          path: ~/phpunit
+  build-dev-job:
+    docker:
+      - image: google/cloud-sdk:latest
+    steps:
+      - setup_remote_docker:
+          version: 20.10.12
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Authenticate gcloud with service account
+          command: |
+            echo $GCLOUD_SERVICE_KEY | gcloud auth activate-service-account --key-file=-
+            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+            gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+            gcloud container clusters get-credentials marketplace-cluster-1 --zone=${GOOGLE_COMPUTE_ZONE}
+            gcloud --quiet auth configure-docker gcr.io
+      - run:
+          name: Build Nginx Docker image
+          command: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/nginx -f Dockerfile-nginx-dev .
+      - run:
+          name: Push Nginx Docker image
+          command: docker push gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/nginx
+      - run:
+          name: Build Marketplace Docker image
+          command: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/marketplace -f Dockerfile-dev .
+      - run:
+          name: Push Marketplace Docker image
+          command: docker push gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/marketplace
   deploy-dev-job:
     docker:
       - image: google/cloud-sdk:latest
@@ -77,6 +133,9 @@ jobs:
           gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
           gcloud container clusters get-credentials marketplace-cluster-1 --zone=${GOOGLE_COMPUTE_ZONE}
       - run:
+          name: Apply marketplace deployment in GKE
+          command: kubectl apply -f kubernetes-resources/dev/deployments/marketplace-deployment.yaml --namespace=dev
+      - run:
           name: Apply nginx deployment in GKE
           command: kubectl apply -f kubernetes-resources/dev/deployments/nginx-deployment.yaml --namespace=dev
       - run:
@@ -85,12 +144,22 @@ jobs:
       - run:
           name: Apply nginx ingress in GKE
           command: kubectl apply -f kubernetes-resources/dev/ingress/nginx-ingress.yaml --namespace=dev
+      - run:
+          name: Restart deployments
+          command: |
+            kubectl rollout restart deployment/marketplace-deployment --namespace=dev
+            kubectl rollout restart deployment/nginx-deployment --namespace=dev
 
 workflows:
   version: 2
-  test-deploy:
+  test-build-deploy:
     jobs:
+      - create-marketplace-vendors-job
       #- test-job
-      - deploy-dev-job
-#          requires:
+      - build-dev-job:
+          requires:
+            - create-marketplace-vendors-job
+      - deploy-dev-job:
+          requires:
+            - build-dev-job
 #            - test-job # Only deploy dev once the test job has completed

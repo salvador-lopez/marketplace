@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: nginx:stable-alpine
+          image: gcr.io/nimble-acrobat-345809/marketplace-dev-docker-repo/nginx
           ports:
             - containerPort: 80

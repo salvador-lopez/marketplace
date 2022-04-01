@@ -1,0 +1,7 @@
+FROM nginx:stable-alpine
+
+WORKDIR /var/www/marketplace
+
+ADD . /var/www/marketplace
+
+COPY docker/dev/nginx/default.conf /etc/nginx/conf.d/default.conf

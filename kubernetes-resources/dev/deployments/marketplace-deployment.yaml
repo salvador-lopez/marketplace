@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marketplace-deployment
+  labels:
+    app: marketplace
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: marketplace
+  template:
+    metadata:
+      labels:
+        app: marketplace
+    spec:
+      containers:
+        - name: marketplace
+          image: gcr.io/nimble-acrobat-345809/marketplace-dev-docker-repo/marketplace
+          ports:
+            - containerPort: 80
+            - containerPort: 9000
