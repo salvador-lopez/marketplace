@@ -77,8 +77,14 @@ jobs:
           gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
           gcloud container clusters get-credentials marketplace-cluster-1 --zone=${GOOGLE_COMPUTE_ZONE}
       - run:
-          name: Deploy Main to GKE
-          command: kubectl apply -f deployment/dev/nginx-deployment.yaml --namespace=dev
+          name: Apply nginx deployment in GKE
+          command: kubectl apply -f kubernetes-resources/dev/deployments/nginx-deployment.yaml --namespace=dev
+      - run:
+          name: Apply nginx service in GKE
+          command: kubectl apply -f kubernetes-resources/dev/services/nginx-service.yaml --namespace=dev
+      - run:
+          name: Apply nginx ingress in GKE
+          command: kubectl apply -f kubernetes-resources/dev/ingress/nginx-ingress.yaml --namespace=dev
 
 workflows:
   version: 2

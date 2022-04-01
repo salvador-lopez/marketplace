@@ -19,3 +19,4 @@ spec:
           image: nginx:stable-alpine
           ports:
             - containerPort: 80
+              name: http-web-svc
