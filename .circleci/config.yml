@@ -96,6 +96,9 @@ jobs:
 #          name: Apply nginx deployment in GKE
 #          command: kubectl apply -f kubernetes-resources/dev/deployments/nginx-deployment.yaml --namespace=dev
 #      - run:
+#          name: Apply marketplace service in GKE
+#          command: kubectl apply -f kubernetes-resources/dev/services/marketplace-service.yaml --namespace=dev
+#      - run:
 #          name: Apply nginx service in GKE
 #          command: kubectl apply -f kubernetes-resources/dev/services/nginx-service.yaml --namespace=dev
 #      - run:
@@ -172,6 +175,9 @@ jobs:
           name: Apply nginx deployment in GKE
           command: kubectl apply -f kubernetes-resources/prod/deployments/nginx-deployment.yaml --namespace=prod
       - run:
+          name: Apply marketplace service in GKE
+          command: kubectl apply -f kubernetes-resources/prod/services/marketplace-service.yaml --namespace=prod
+      - run:
           name: Apply nginx service in GKE
           command: kubectl apply -f kubernetes-resources/prod/services/nginx-service.yaml --namespace=prod
       - run:
@@ -206,8 +212,11 @@ workflows:
       - build-prod-job:
           requires:
             - create-marketplace-prod-vendors-job
-      - deploy-prod-job:
+      - deploy-prod-approval:
           type: approval
           requires:
             - build-prod-job
 #            - deploy-dev-job
+      - deploy-prod-job:
+          requires:
+            - deploy-prod-approval
