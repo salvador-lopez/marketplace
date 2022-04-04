@@ -1,7 +1,20 @@
 FROM nginx:stable-alpine
 
+ARG USER_NAME="marketplace"
+
+# Add user
+RUN addgroup -S ${USER_NAME}
+RUN adduser -S ${USER_NAME} -G ${USER_NAME}
+RUN chown ${USER_NAME} /home/${USER_NAME}
+USER ${USER_NAME}
+
 WORKDIR /var/www/marketplace
 
 ADD . /var/www/marketplace
 
+USER root
+RUN chown -R ${USER_NAME}:${USER_NAME} /var/www/marketplace
+
 COPY docker/dev/nginx/default.conf /etc/nginx/conf.d/default.conf
+
+USER ${USER_NAME}

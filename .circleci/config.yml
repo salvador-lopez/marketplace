@@ -16,7 +16,7 @@ jobs:
 
       - run:
           name: Clear and Warmup cache
-          command: APP_ENV=prod APP_DEBUG=0 php bin/console cache:clear
+          command: php bin/console cache:clear
       - persist_to_workspace:
           root: .
           paths:
