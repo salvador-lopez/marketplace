@@ -15,4 +15,4 @@ ADD . /var/www/marketplace
 USER root
 RUN chown -R ${USER_NAME}:${USER_NAME} /var/www/marketplace
 
-COPY docker/dev/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY docker/common/nginx/default.conf /etc/nginx/conf.d/default.conf

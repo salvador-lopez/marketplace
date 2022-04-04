@@ -11,9 +11,7 @@ jobs:
       - run:
           name: Check Symfony requirements
           command: composer require symfony/requirements-checker
-
       - run: composer install -n --prefer-dist
-
       - run:
           name: Clear and Warmup cache
           command: php bin/console cache:clear
@@ -50,6 +48,7 @@ jobs:
             when: always
       - store_test_results:
           path: ~/phpunit
+
   build-dev-job:
     docker:
       - image: google/cloud-sdk:latest
@@ -69,16 +68,17 @@ jobs:
             gcloud --quiet auth configure-docker gcr.io
       - run:
           name: Build Nginx Docker image
-          command: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/nginx -f Dockerfile-nginx-dev .
+          command: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/nginx -f Dockerfile-nginx .
       - run:
           name: Push Nginx Docker image
           command: docker push gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/nginx
       - run:
           name: Build Marketplace Docker image
-          command: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/marketplace -f Dockerfile-dev .
+          command: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/marketplace -f Dockerfile .
       - run:
           name: Push Marketplace Docker image
           command: docker push gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/marketplace
+
   deploy-dev-job:
     docker:
       - image: google/cloud-sdk:latest
@@ -107,9 +107,84 @@ jobs:
             kubectl rollout restart deployment/marketplace-deployment --namespace=dev
             kubectl rollout restart deployment/nginx-deployment --namespace=dev
 
+  create-marketplace-prod-vendors-job:
+    docker:
+      - image: cimg/php:8.1
+    steps:
+      - checkout
+      - run:
+          name: Check Symfony requirements
+          command: APP_ENV=prod APP_DEBUG=0 composer require symfony/requirements-checker
+      - run: composer install --no-dev --optimize-autoloader
+      - run:
+          name: Clear and Warmup cache
+          command: APP_ENV=prod APP_DEBUG=0 php bin/console cache:clear
+      - persist_to_workspace:
+          root: .
+          paths:
+            - vendor
+            - public
+
+  build-prod-job:
+    docker:
+      - image: google/cloud-sdk:latest
+    steps:
+      - setup_remote_docker:
+          version: 20.10.12
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Authenticate gcloud with service account
+          command: |
+            echo $GCLOUD_SERVICE_KEY | gcloud auth activate-service-account --key-file=-
+            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+            gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+            gcloud container clusters get-credentials marketplace-cluster-1 --zone=${GOOGLE_COMPUTE_ZONE}
+            gcloud --quiet auth configure-docker gcr.io
+      - run:
+          name: Build Nginx Docker image
+          command: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/marketplace-prod-docker-repo/nginx -f Dockerfile-nginx .
+      - run:
+          name: Push Nginx Docker image
+          command: docker push gcr.io/${GOOGLE_PROJECT_ID}/marketplace-prod-docker-repo/nginx
+      - run:
+          name: Build Marketplace Docker image
+          command: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/marketplace-prod-docker-repo/marketplace -f Dockerfile .
+      - run:
+          name: Push Marketplace Docker image
+          command: docker push gcr.io/${GOOGLE_PROJECT_ID}/marketplace-prod-docker-repo/marketplace
+
+  deploy-prod-job:
+    docker:
+      - image: google/cloud-sdk:latest
+    steps:
+      - checkout
+      - run: |
+          echo $GCLOUD_SERVICE_KEY | gcloud auth activate-service-account --key-file=-
+          gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+          gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+          gcloud container clusters get-credentials marketplace-cluster-1 --zone=${GOOGLE_COMPUTE_ZONE}
+      - run:
+          name: Apply marketplace deployment in GKE
+          command: kubectl apply -f kubernetes-resources/prod/deployments/marketplace-deployment.yaml --namespace=prod
+      - run:
+          name: Apply nginx deployment in GKE
+          command: kubectl apply -f kubernetes-resources/prod/deployments/nginx-deployment.yaml --namespace=prod
+      - run:
+          name: Apply nginx service in GKE
+          command: kubectl apply -f kubernetes-resources/prod/services/nginx-service.yaml --namespace=prod
+      - run:
+          name: Apply nginx ingress in GKE
+          command: kubectl apply -f kubernetes-resources/prod/ingress/nginx-ingress.yaml --namespace=prod
+      - run:
+          name: Restart deployments
+          command: |
+            kubectl rollout restart deployment/marketplace-deployment --namespace=prod
+            kubectl rollout restart deployment/nginx-deployment --namespace=prod
 workflows:
   version: 2
-  test-build-deploy:
+  test-build-deploy-dev:
     jobs:
       - create-marketplace-dev-vendors-job
       - test-job:
@@ -121,3 +196,13 @@ workflows:
       - deploy-dev-job:
           requires:
             - build-dev-job
+  build-deploy-prod:
+    jobs:
+      - create-marketplace-prod-vendors-job
+      - build-prod-job:
+          requires:
+            - test-job
+      - deploy-prod-job:
+          type: approval
+          requires:
+            - build-prod-job
