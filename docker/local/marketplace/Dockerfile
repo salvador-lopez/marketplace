@@ -31,6 +31,11 @@ RUN mv /root/.symfony/bin/symfony /usr/local/bin/symfony
 RUN useradd ${USER_NAME}
 RUN mkdir /home/${USER_NAME}
 RUN chown ${USER_NAME} /home/${USER_NAME}
+
+USER root
+RUN mkdir -p /var/www/marketplace/var
+RUN chown -R ${USER_NAME}:${USER_NAME} /var/www/marketplace
+
 USER ${USER_NAME}
 
 WORKDIR /var/www/marketplace

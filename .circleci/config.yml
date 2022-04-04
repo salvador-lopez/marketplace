@@ -12,7 +12,45 @@ jobs:
       - image: cimg/php:8.1
     steps:
       - checkout
-      # Download and cache dependencies
+      - run:
+          name: Check Symfony requirements
+          command: composer require symfony/requirements-checker
+
+      - run: APP_ENV=prod composer install --no-dev --optimize-autoloader
+
+      - run:
+          name: Clear and Warmup cache
+          command: APP_ENV=prod APP_DEBUG=0 php bin/console cache:clear
+      - persist_to_workspace:
+          # Must be an absolute path, or relative path from working_directory. This is a directory on the container which is
+          # taken to be the root directory of the workspace.
+          root: .
+          # Must be relative path from root
+          paths:
+            - vendor
+
+  test-job:
+    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+    docker:
+      # Specify the version you desire here
+      - image: cimg/php:8.1-browsers
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # Using the RAM variation mitigates I/O contention
+      # for database intensive operations.
+      # - image: circleci/mysql:5.7-ram
+      #
+      # - image: redis:2.8.19
+
+    # Add steps to the job
+    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+    steps:
+      - checkout
+      - browser-tools/install-browser-tools
+      - run: sudo apt update
       - restore_cache:
           keys:
             # "composer.lock" can be used if it is committed to the repo
@@ -26,73 +64,23 @@ jobs:
           key: v1-dependencies-{{ checksum "composer.json" }}
           paths:
             - ./vendor
-      - persist_to_workspace:
-          # Must be an absolute path, or relative path from working_directory. This is a directory on the container which is
-          # taken to be the root directory of the workspace.
-          root: .
-          # Must be relative path from root
-          paths:
-            - vendor
-
-#  test-job:
-#    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
-#    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
-#    docker:
-#      # Specify the version you desire here
-#      - image: cimg/php:8.1-browsers
-#
-#      # Specify service dependencies here if necessary
-#      # CircleCI maintains a library of pre-built images
-#      # documented at https://circleci.com/docs/2.0/circleci-images/
-#      # Using the RAM variation mitigates I/O contention
-#      # for database intensive operations.
-#      # - image: circleci/mysql:5.7-ram
-#      #
-#      # - image: redis:2.8.19
-#
-#    # Add steps to the job
-#    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
-#    steps:
-#      - checkout
-#      - browser-tools/install-browser-tools
-#
-#      - run: sudo apt update # PHP CircleCI 2.0 Configuration File# PHP CircleCI 2.0 Configuration File sudo apt install zlib1g-dev libsqlite3-dev
-#      #- run: sudo docker-php-ext-install zip
-#
-#      # Download and cache dependencies
-#      - restore_cache:
-#          keys:
-#            # "composer.lock" can be used if it is committed to the repo
-#            - v1-dependencies-{{ checksum "composer.json" }}
-#            # fallback to using the latest cache if no exact match is found
-#            - v1-dependencies-
-#
-#      - run: composer install -n --prefer-dist
-#
-#      - save_cache:
-#          key: v1-dependencies-{{ checksum "composer.json" }}
-#          paths:
-#            - ./vendor
-#
-#      # TODO prepare the database
-#
-##      - run:
-##          name: "Run tests with coverage"
-##          command: |
-##            mkdir -p ~/phpunit
-##            phpdbg -qrr bin/phpunit --coverage-html build/coverage-report --log-junit ~/phpunit/junit.xml tests
-##          when: always
-##          environment:
-##            XDEBUG_MODE: coverage
-##      - store_artifacts:
-##          path:  build/coverage-report
-#      - run:
-#            command: |
-#              mkdir -p ~/phpunit
-#              bin/phpunit --log-junit ~/phpunit/junit.xml tests
-#            when: always
-#      - store_test_results:
-#          path: ~/phpunit
+      - run:
+          name: "Run tests with coverage"
+          command: |
+            mkdir -p ~/phpunit
+            phpdbg -qrr bin/phpunit --coverage-html build/coverage-report --log-junit ~/phpunit/junit.xml tests
+          when: always
+          environment:
+            XDEBUG_MODE: coverage
+      - store_artifacts:
+          path:  build/coverage-report
+      - run:
+            command: |
+              mkdir -p ~/phpunit
+              bin/phpunit --log-junit ~/phpunit/junit.xml tests
+            when: always
+      - store_test_results:
+          path: ~/phpunit
   build-dev-job:
     docker:
       - image: google/cloud-sdk:latest
@@ -155,11 +143,12 @@ workflows:
   test-build-deploy:
     jobs:
       - create-marketplace-vendors-job
-      #- test-job
-      - build-dev-job:
+      - test-job:
           requires:
             - create-marketplace-vendors-job
+      - build-dev-job:
+          requires:
+            - test-job
       - deploy-dev-job:
           requires:
             - build-dev-job
-#            - test-job # Only deploy dev once the test job has completed
