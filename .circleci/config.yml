@@ -3,7 +3,7 @@ orbs:
   browser-tools: circleci/browser-tools@1.2.3
 
 jobs:
-#  create-marketplace-dev-vendors-job:
+#  create-marketplace-dev-assets-job:
 #    docker:
 #      - image: cimg/php:8.1
 #    steps:
@@ -55,6 +55,7 @@ jobs:
 #    steps:
 #      - setup_remote_docker:
 #          version: 20.10.12
+#          docker_layer_caching: true
 #      - checkout
 #      - attach_workspace:
 #          at: .
@@ -110,7 +111,7 @@ jobs:
 #            kubectl rollout restart deployment/marketplace-deployment --namespace=dev
 #            kubectl rollout restart deployment/nginx-deployment --namespace=dev
 
-  create-marketplace-prod-vendors-job:
+  create-marketplace-prod-assets-job:
     docker:
       - image: cimg/php:8.1
     steps:
@@ -120,6 +121,12 @@ jobs:
           command: APP_ENV=prod APP_DEBUG=0 composer require symfony/requirements-checker
       - run: APP_ENV=prod APP_DEBUG=0 composer install --no-dev --optimize-autoloader
       - run:
+          name: Decrypt prod env vars
+          command: APP_ENV=prod APP_DEBUG=0 php bin/console secrets:decrypt-to-local --force
+      - run:
+          name: Dump env vars to .env.local
+          command: composer dump-env prod
+      - run:
           name: Clear and Warmup cache
           command: APP_ENV=prod APP_DEBUG=0 php bin/console cache:clear
       - persist_to_workspace:
@@ -127,6 +134,9 @@ jobs:
           paths:
             - vendor
             - public
+            - config/secrets/prod
+            - .env.prod.local
+            - .env.local.php
 
   build-prod-job:
     docker:
@@ -134,6 +144,7 @@ jobs:
     steps:
       - setup_remote_docker:
           version: 20.10.12
+          docker_layer_caching: true
       - checkout
       - attach_workspace:
           at: .
@@ -192,17 +203,17 @@ workflows:
   version: 2
   test-build-deploy:
     jobs:
-#      - create-marketplace-dev-vendors-job
+#      - create-marketplace-dev-assets-job
 #      - test-job:
 #          requires:
-#            - create-marketplace-dev-vendors-job
+#            - create-marketplace-dev-assets-job
 #      - build-dev-job:
 #          requires:
 #            - test-job
 #      - deploy-dev-job:
 #          requires:
 #            - build-dev-job
-      - create-marketplace-prod-vendors-job:
+      - create-marketplace-prod-assets-job:
 #          requires:
 #            - deploy-dev-job
           filters:
@@ -211,7 +222,7 @@ workflows:
                 - main
       - build-prod-job:
           requires:
-            - create-marketplace-prod-vendors-job
+            - create-marketplace-prod-assets-job
       - deploy-prod-approval:
           type: approval
           requires:

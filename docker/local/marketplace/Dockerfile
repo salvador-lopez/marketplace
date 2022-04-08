@@ -21,8 +21,6 @@ RUN pecl install xdebug && docker-php-ext-enable xdebug
 
 RUN curl -sS https://get.symfony.com/cli/installer | bash
 
-RUN echo 'alias composer="XDEBUG_MODE=off composer"' >> ~/.bashrc
-
 RUN mv /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini
 
 RUN mv /root/.symfony/bin/symfony /usr/local/bin/symfony
@@ -37,5 +35,8 @@ RUN mkdir -p /var/www/marketplace/var
 RUN chown -R ${USER_NAME}:${USER_NAME} /var/www/marketplace
 
 USER ${USER_NAME}
+
+RUN echo 'alias composer="XDEBUG_MODE=off composer"' >> ~/.bashrc
+RUN echo 'alias php="XDEBUG_MODE=off php"' >> ~/.bashrc
 
 WORKDIR /var/www/marketplace
