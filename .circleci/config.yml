@@ -3,113 +3,113 @@ orbs:
   browser-tools: circleci/browser-tools@1.2.3
 
 jobs:
-#  create-marketplace-dev-assets-job:
-#    docker:
-#      - image: cimg/php:8.1
-#    steps:
-#      - checkout
-#      - run:
-#          name: Check Symfony requirements
-#          command: composer require symfony/requirements-checker
-#      - run: composer install -n --prefer-dist
-#      - run:
-#          name: Clear and Warmup cache
-#          command: php bin/console cache:clear
-#      - persist_to_workspace:
-#          root: .
-#          paths:
-#            - vendor
-#            - public
+  create-marketplace-dev-assets-job:
+    docker:
+      - image: cimg/php:8.1
+    steps:
+      - checkout
+      - run:
+          name: Check Symfony requirements
+          command: composer require symfony/requirements-checker
+      - run: composer install -n --prefer-dist
+      - run:
+          name: Clear and Warmup cache
+          command: php bin/console cache:clear
+      - persist_to_workspace:
+          root: .
+          paths:
+            - vendor
+            - public
 
-#  test-job:
-#    docker:
-#      - image: cimg/php:8.1-browsers
-#
-#    steps:
-#      - checkout
-#      - browser-tools/install-browser-tools
-#      - run: sudo apt update
-#      - attach_workspace:
-#          at: .
-#      - run:
-#          name: "Run tests with coverage"
-#          command: |
-#            mkdir -p ~/phpunit
-#            phpdbg -qrr bin/phpunit --coverage-html build/coverage-report --log-junit ~/phpunit/junit.xml tests
-#          when: always
-#          environment:
-#            XDEBUG_MODE: coverage
-#      - store_artifacts:
-#          path:  build/coverage-report
-#      - run:
-#            command: |
-#              mkdir -p ~/phpunit
-#              bin/phpunit --log-junit ~/phpunit/junit.xml tests
-#            when: always
-#      - store_test_results:
-#          path: ~/phpunit
+  test-job:
+    docker:
+      - image: cimg/php:8.1-browsers
 
-#  build-dev-job:
-#    docker:
-#      - image: google/cloud-sdk:latest
-#    steps:
-#      - setup_remote_docker:
-#          version: 20.10.12
-#          docker_layer_caching: true
-#      - checkout
-#      - attach_workspace:
-#          at: .
-#      - run:
-#          name: Authenticate gcloud with service account
-#          command: |
-#            echo $GCLOUD_SERVICE_KEY | gcloud auth activate-service-account --key-file=-
-#            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
-#            gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
-#            gcloud container clusters get-credentials marketplace-cluster-1 --zone=${GOOGLE_COMPUTE_ZONE}
-#            gcloud --quiet auth configure-docker gcr.io
-#      - run:
-#          name: Build Nginx Docker image
-#          command: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/nginx -f Dockerfile-nginx .
-#      - run:
-#          name: Push Nginx Docker image
-#          command: docker push gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/nginx
-#      - run:
-#          name: Build Marketplace Docker image
-#          command: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/marketplace -f Dockerfile .
-#      - run:
-#          name: Push Marketplace Docker image
-#          command: docker push gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/marketplace
-#
-#  deploy-dev-job:
-#    docker:
-#      - image: google/cloud-sdk:latest
-#    steps:
-#      - checkout
-#      - run: |
-#          echo $GCLOUD_SERVICE_KEY | gcloud auth activate-service-account --key-file=-
-#          gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
-#          gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
-#          gcloud container clusters get-credentials marketplace-cluster-1 --zone=${GOOGLE_COMPUTE_ZONE}
-#      - run:
-#          name: Apply marketplace deployment in GKE
-#          command: kubectl apply -f kubernetes-resources/dev/deployments/marketplace-deployment.yaml --namespace=dev
-#      - run:
-#          name: Apply nginx deployment in GKE
-#          command: kubectl apply -f kubernetes-resources/dev/deployments/nginx-deployment.yaml --namespace=dev
-#      - run:
-#          name: Apply marketplace service in GKE
-#          command: kubectl apply -f kubernetes-resources/dev/services/marketplace-service.yaml --namespace=dev
-#      - run:
-#          name: Apply nginx service in GKE
-#          command: kubectl apply -f kubernetes-resources/dev/services/nginx-service.yaml --namespace=dev
-#      - run:
-#          name: Apply nginx ingress in GKE
-#          command: kubectl apply -f kubernetes-resources/dev/ingress/nginx-ingress.yaml --namespace=dev
-#      - run:
-#          name: Restart deployments
-#          command: |
-#            kubectl rollout restart deployment/marketplace-deployment --namespace=dev
-#            kubectl rollout restart deployment/nginx-deployment --namespace=dev
+    steps:
+      - checkout
+      - browser-tools/install-browser-tools
+      - run: sudo apt update
+      - attach_workspace:
+          at: .
+      - run:
+          name: "Run tests with coverage"
+          command: |
+            mkdir -p ~/phpunit
+            phpdbg -qrr bin/phpunit --coverage-html build/coverage-report --log-junit ~/phpunit/junit.xml tests
+          when: always
+          environment:
+            XDEBUG_MODE: coverage
+      - store_artifacts:
+          path:  build/coverage-report
+      - run:
+            command: |
+              mkdir -p ~/phpunit
+              bin/phpunit --log-junit ~/phpunit/junit.xml tests
+            when: always
+      - store_test_results:
+          path: ~/phpunit
+
+  build-dev-job:
+    docker:
+      - image: google/cloud-sdk:latest
+    steps:
+      - setup_remote_docker:
+          version: 20.10.12
+          docker_layer_caching: true
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Authenticate gcloud with service account
+          command: |
+            echo $GCLOUD_SERVICE_KEY | gcloud auth activate-service-account --key-file=-
+            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+            gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+            gcloud container clusters get-credentials marketplace-cluster-1 --zone=${GOOGLE_COMPUTE_ZONE}
+            gcloud --quiet auth configure-docker gcr.io
+      - run:
+          name: Build Nginx Docker image
+          command: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/nginx -f Dockerfile-nginx .
+      - run:
+          name: Push Nginx Docker image
+          command: docker push gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/nginx
+      - run:
+          name: Build Marketplace Docker image
+          command: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/marketplace -f Dockerfile .
+      - run:
+          name: Push Marketplace Docker image
+          command: docker push gcr.io/${GOOGLE_PROJECT_ID}/marketplace-dev-docker-repo/marketplace
+
+  deploy-dev-job:
+    docker:
+      - image: google/cloud-sdk:latest
+    steps:
+      - checkout
+      - run: |
+          echo $GCLOUD_SERVICE_KEY | gcloud auth activate-service-account --key-file=-
+          gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+          gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+          gcloud container clusters get-credentials marketplace-cluster-1 --zone=${GOOGLE_COMPUTE_ZONE}
+      - run:
+          name: Apply marketplace deployment in GKE
+          command: kubectl apply -f kubernetes-resources/dev/deployments/marketplace-deployment.yaml --namespace=dev
+      - run:
+          name: Apply nginx deployment in GKE
+          command: kubectl apply -f kubernetes-resources/dev/deployments/nginx-deployment.yaml --namespace=dev
+      - run:
+          name: Apply marketplace service in GKE
+          command: kubectl apply -f kubernetes-resources/dev/services/marketplace-service.yaml --namespace=dev
+      - run:
+          name: Apply nginx service in GKE
+          command: kubectl apply -f kubernetes-resources/dev/services/nginx-service.yaml --namespace=dev
+      - run:
+          name: Apply nginx ingress in GKE
+          command: kubectl apply -f kubernetes-resources/dev/ingress/nginx-ingress.yaml --namespace=dev
+      - run:
+          name: Restart deployments
+          command: |
+            kubectl rollout restart deployment/marketplace-deployment --namespace=dev
+            kubectl rollout restart deployment/nginx-deployment --namespace=dev
 
   create-marketplace-prod-assets-job:
     docker:
@@ -203,19 +203,19 @@ workflows:
   version: 2
   test-build-deploy:
     jobs:
-#      - create-marketplace-dev-assets-job
-#      - test-job:
-#          requires:
-#            - create-marketplace-dev-assets-job
-#      - build-dev-job:
-#          requires:
-#            - test-job
-#      - deploy-dev-job:
-#          requires:
-#            - build-dev-job
+      - create-marketplace-dev-assets-job
+      - test-job:
+          requires:
+            - create-marketplace-dev-assets-job
+      - build-dev-job:
+          requires:
+            - test-job
+      - deploy-dev-job:
+          requires:
+            - build-dev-job
       - create-marketplace-prod-assets-job:
-#          requires:
-#            - deploy-dev-job
+          requires:
+            - deploy-dev-job
           filters:
             branches:
               only:
@@ -227,7 +227,7 @@ workflows:
           type: approval
           requires:
             - build-prod-job
-#            - deploy-dev-job
+            - deploy-dev-job
       - deploy-prod-job:
           requires:
             - deploy-prod-approval
